@@ -29,9 +29,16 @@ func main() {
 	ch := make(chan *dbus.Signal, 10)
 	conn.Signal(ch)
 	for signal := range ch {
-		fmt.Printf("Got signal: %s\n", signal.Name)
-		for i, body := range signal.Body {
-			fmt.Printf("  Arg %d: %#v\n", i, body)
+		if signal.Name == "org.freedesktop.DBus.Properties.PropertiesChanged" {
+			iface := signal.Body[0].(string)
+			changedProps := signal.Body[1].(map[string]dbus.Variant)
+
+			if iface == "org.bluez.MediaTransport1" {
+				if volVariant, ok := changedProps["Volume"]; ok {
+					volume := volVariant.Value().(uint16)
+					fmt.Printf("Current Volume: %d\n", volume)
+				}
+			}
 		}
 	}
 }
